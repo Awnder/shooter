@@ -183,6 +183,8 @@ class Soldier(pygame.sprite.Sprite):
         The physics engine calls this function when the Soldier is jumping and
         hits the ground. It records the fact that the soldier can jump again.
         '''
+        if impact_velocity > 19:
+            self.health -= 5
         self.vel_y = 0
         self.in_air = False
 

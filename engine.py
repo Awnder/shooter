@@ -281,6 +281,14 @@ class GameEngine():
                     enemy.health -= bullet.damage
                     bullet.kill()
 
+    def handle_bullet_obstacle_collision(self):
+        '''
+        Check for bullet collisions with obstacles and remove the bullet.
+        '''
+        for bullet in self.groups['bullet']:
+            for tile in self.groups['obstacle']:
+                if tile.rect.colliderect(bullet.rect):
+                    bullet.kill()
 
     def make_grenades_explode(self):
         '''
