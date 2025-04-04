@@ -3,7 +3,7 @@ from gymenv import ShooterEnv
 
 
 # Manually create and initialize the environment
-env = ShooterEnv(render_mode=None)
+env = ShooterEnv(render_mode="human")
 obs, info = env.reset()
 print(f"Initial observation shape: {obs.shape}")
 print(f"Initial debug info: {info}\n")

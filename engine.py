@@ -410,6 +410,7 @@ class GameEngine():
         # Special collision-based updates
         self.collect_item_boxes()
         self.handle_bullet_damage()
+        self.handle_bullet_obstacle_collision()
         self.make_grenades_explode()
 
         # Standard updates to all sprite groups
