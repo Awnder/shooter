@@ -48,9 +48,13 @@ class ShooterEnv(gym.Env):
             pygame.display.set_mode((1, 1), pygame.HIDDEN)
             self.game = GameEngine(None, False)
 
-        # Observation: [health, exit_dx, ammo, grenades]
-        low = np.array([0, -10000, 0, 0], dtype=np.float32)
-        high = np.array([100, 10000, 50, 20], dtype=np.float32)
+        # Observation: [dx, dy, health, exit_dx, exit_dy, ammo, grenades]
+        # low = np.array([-10000, -1000, 0, -10000, -10000, 0, 0], dtype=np.float32)
+        # high = np.array([10000, 1000, 100, 10000, 10000, 50, 20], dtype=np.float32)
+
+        # Observation: [dx, health, ammo, grenades]
+        low = np.array([-10000, 0, 0, 0], dtype=np.float32)
+        high = np.array([10000, 100, 50, 20], dtype=np.float32)
 
         # Discrete action space of possible moves
         self.action_space = Discrete(len(low))
@@ -126,9 +130,8 @@ class ShooterEnv(gym.Env):
 
         # Create an observation (7 values)
         obs = [
+            p_dx,
             p.health,
-            exit_dx,
-            exit_dy,
             p.ammo,
             p.grenades
         ]
@@ -165,14 +168,14 @@ class ShooterEnv(gym.Env):
         if not p.alive:
             return -100
         
-        exit_dx, exit_dy = self._get_exit_offset(p)
+        p_dx = p.rect.centerx - self.start_x
 
-        reward = 0.001 * exit_dx # exit distance is negative
-        # print(reward, exit_dx)
+        reward = 10 * -p_dx
+        # print(reward, -p_dx)
         # reward = 0.1 * (p.rect.centerx - self.start_x)
-        reward += p.health * 0.5
-        reward += p.ammo * 0.5
-        reward += p.grenades * 1
+        # reward += p.health * 0.1
+        # reward += p.ammo * 0.1
+        # reward += p.grenades * 0.1
 
         # check rewards for bullet hits on enemies
         for bullet in self.game.groups['bullet']:
@@ -182,10 +185,13 @@ class ShooterEnv(gym.Env):
                     reward += 10
                     if enemy.health <= 0:
                         reward += 30
+        
 
         if self.game.level_complete:
-            reward += 100
+            reward += 500
         
+        # print(reward)
+
         return reward
 
 

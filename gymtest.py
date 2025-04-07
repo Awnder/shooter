@@ -62,7 +62,7 @@ if __name__ == "__main__":
             done = False
 
             while not done:
-                action = agent.get_action(tuple(obs))
+                action = agent.get_action(obs)
                 next_obs, reward, terminated, truncated, info = env.step(action)
                 
                 env.render()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             done = False
 
             while not done:
-                action = agent.get_action(tuple(obs))
+                action = agent.get_action(obs)
                 next_obs, reward, terminated, truncated, info = env.step(action)
                 
                 agent.update(obs, action, reward, terminated, next_obs)
@@ -101,8 +101,8 @@ if __name__ == "__main__":
             agent.decay_epsilon()
             ep_count += 1
 
-            if ep_count % 100 == 0:
-                # Save a snapshot every 100 episodes
+            if ep_count % 10 == 0:
+                # Save a snapshot every 10 episodes
                 agent.save_snapshot(f'{ep_count}')
                 print(f"Saved snapshot at episode {ep_count}")
 

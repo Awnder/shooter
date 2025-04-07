@@ -41,6 +41,7 @@ class ShooterAgent:
         """Returns best action with probability (1 - epsilon).
         Otherwise returns random action with probability epsilon.
         """
+        obs = tuple(obs)
         if np.random.rand() < self.epsilon:
             return self.env.action_space.sample()
         else:
