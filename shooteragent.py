@@ -29,9 +29,9 @@ class ShooterAgent:
             discount_factor (float): Discount factor for computing the Q-value
         """
         self.env = env
-        self.q_values = defaultdict(lambda: np.zeros(env.action_space.n))
-        self.lr = learning_rate
-        self.discount_factor = discount_factor
+        self.q_table = defaultdict(lambda: np.zeros(env.action_space.n))
+        self.alpha = learning_rate
+        self.gamma = discount_factor
         self.epsilon = initial_epsilon
         self.epsilon_decay = epsilon_decay
         self.final_epsilon = final_epsilon
@@ -45,7 +45,7 @@ class ShooterAgent:
         if np.random.rand() < self.epsilon:
             return self.env.action_space.sample()
         else:
-            return int(np.argmax(self.q_values[obs]))
+            return int(np.argmax(self.q_table[obs]))
 
     def update(
         self,
@@ -68,14 +68,9 @@ class ShooterAgent:
         obs = tuple(obs)
         next_obs = tuple(next_obs)
 
-        future_q = (not terminated) * np.max(self.q_values[next_obs]) # like here
-        temporal_difference_error = (
-            reward + self.discount_factor * future_q - self.q_values[obs][action]
-        )
+        temporal_difference_error = reward + self.gamma * np.max(self.q_table[next_obs]) - self.q_table[obs][action]
 
-        self.q_values[obs][action] = (
-            self.q_values[obs][action] + self.lr * temporal_difference_error
-        )
+        self.q_table[obs][action] = self.q_table[obs][action] + self.alpha * temporal_difference_error
 
         self.training_error.append(temporal_difference_error)
 
@@ -91,7 +86,7 @@ class ShooterAgent:
         if not os.path.exists('snapshots'):
             os.makedirs('snapshots')
         with open(os.path.join('snapshots', f'{filename}.pkl'), 'wb') as f:
-            pickle.dump(dict(self.q_values), f)
+            pickle.dump(dict(self.q_table), f)
 
     def load_snapshot(self, filename) -> None:
         """Load the agent a snapshot of the Q-values from a file.
@@ -99,7 +94,7 @@ class ShooterAgent:
             filename (str): The filename to load the snapshot from.
         """
         with open(f'{filename}.pkl', 'rb') as f:
-            self.q_values = defaultdict(
+            self.q_table = defaultdict(
                 lambda: np.zeros(self.env.action_space.n),
                 pickle.load(f)
             )

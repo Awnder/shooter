@@ -49,12 +49,12 @@ class ShooterEnv(gym.Env):
             self.game = GameEngine(None, False)
 
         # Observation: [dx, dy, health, exit_dx, exit_dy, ammo, grenades]
-        # low = np.array([-10000, -1000, 0, -10000, -10000, 0, 0], dtype=np.float32)
-        # high = np.array([10000, 1000, 100, 10000, 10000, 50, 20], dtype=np.float32)
+        low = np.array([-10000, -1000, 0, -10000, -10000, 0, 0], dtype=np.float32)
+        high = np.array([10000, 1000, 100, 10000, 10000, 50, 20], dtype=np.float32)
 
         # Observation: [dx, health, ammo, grenades]
-        low = np.array([-10000, 0, 0, 0], dtype=np.float32)
-        high = np.array([10000, 100, 50, 20], dtype=np.float32)
+        # low = np.array([-10000, 0, 0, 0], dtype=np.float32)
+        # high = np.array([10000, 100, 50, 20], dtype=np.float32)
 
         # Discrete action space of possible moves
         self.action_space = Discrete(len(low))
@@ -131,7 +131,10 @@ class ShooterEnv(gym.Env):
         # Create an observation (7 values)
         obs = [
             p_dx,
+            p_dy,
             p.health,
+            exit_dx,
+            exit_dy,
             p.ammo,
             p.grenades
         ]
@@ -163,14 +166,15 @@ class ShooterEnv(gym.Env):
 
 
     def _get_reward(self):
+        # perhaps try to have increased rewards at beginning and use a function to diminish returns on distance (because distance is a large value)
         p = self.game.player
 
         if not p.alive:
-            return -100
+            return -100_000
         
         p_dx = p.rect.centerx - self.start_x
 
-        reward = 10 * -p_dx
+        reward = 1000 * -p_dx
         # print(reward, -p_dx)
         # reward = 0.1 * (p.rect.centerx - self.start_x)
         # reward += p.health * 0.1
@@ -188,7 +192,7 @@ class ShooterEnv(gym.Env):
         
 
         if self.game.level_complete:
-            reward += 500
+            reward += 100_000
         
         # print(reward)
 
