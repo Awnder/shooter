@@ -103,5 +103,6 @@ if __name__ == "__main__":
 
             if ep_count % 100 == 0:
                 # Save a snapshot every 100 episodes
-                agent.save_snapshot(f'snapshot_{ep_count}')
+                agent.save_snapshot(f'{ep_count}')
+                print(f"Saved snapshot at episode {ep_count}")
 

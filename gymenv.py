@@ -48,9 +48,9 @@ class ShooterEnv(gym.Env):
             pygame.display.set_mode((1, 1), pygame.HIDDEN)
             self.game = GameEngine(None, False)
 
-        # Observation: [health, exit_dx, exit_dy, ammo, grenades]
-        low = np.array([0, -10000, -10000, 0, 0], dtype=np.float32)
-        high = np.array([100, 10000, 1000, 50, 20], dtype=np.float32)
+        # Observation: [health, exit_dx, ammo, grenades]
+        low = np.array([0, -10000, 0, 0], dtype=np.float32)
+        high = np.array([100, 10000, 50, 20], dtype=np.float32)
 
         # Discrete action space of possible moves
         self.action_space = Discrete(len(low))
@@ -167,7 +167,8 @@ class ShooterEnv(gym.Env):
         
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        reward = 0.3 * -exit_dx # exit distance is negative
+        reward = 0.001 * exit_dx # exit distance is negative
+        # print(reward, exit_dx)
         # reward = 0.1 * (p.rect.centerx - self.start_x)
         reward += p.health * 0.5
         reward += p.ammo * 0.5
