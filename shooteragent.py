@@ -6,9 +6,8 @@ pygame.mixer.init()
 
 from collections import defaultdict
 import gymnasium as gym
-from gymenv import ShooterEnv
-from tqdm import tqdm
 import pickle
+import os
 
 class ShooterAgent:
     def __init__(
@@ -88,7 +87,9 @@ class ShooterAgent:
         Args:
             filename (str): The filename to save the snapshot to.
         """
-        with open(f'{filename}.pkl', 'wb') as f:
+        if not os.path.exists('snapshots'):
+            os.makedirs('snapshots')
+        with open(os.path.join('snapshots', f'{filename}.pkl'), 'wb') as f:
             pickle.dump(dict(self.q_values), f)
 
     def load_snapshot(self, filename) -> None:

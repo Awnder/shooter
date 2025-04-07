@@ -167,7 +167,7 @@ class ShooterEnv(gym.Env):
         
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        reward = 0.2 * -exit_dx # exit distance is negative
+        reward = 0.3 * -exit_dx # exit distance is negative
         # reward = 0.1 * (p.rect.centerx - self.start_x)
         reward += p.health * 0.5
         reward += p.ammo * 0.5
