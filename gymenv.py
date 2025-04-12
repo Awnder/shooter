@@ -8,6 +8,7 @@ pygame.mixer.init()
 import gymnasium as gym
 from gymnasium.spaces import Discrete, Box
 from gymnasium.envs.registration import register
+from shooteragent import ShooterAgent
 from engine import GameEngine
 from controller import GameController
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -48,9 +49,9 @@ class ShooterEnv(gym.Env):
             pygame.display.set_mode((1, 1), pygame.HIDDEN)
             self.game = GameEngine(None, False)
 
-        # Observation: [dx, dy, health, exit_dx, exit_dy, ammo, grenades]
-        low = np.array([-10000, -1000, 0, -10000, -10000, 0, 0], dtype=np.float32)
-        high = np.array([10000, 1000, 100, 10000, 10000, 50, 20], dtype=np.float32)
+        # Observation: [dx, dy, exit_dx, exit_dy, health, ammo, grenades]
+        low = np.array([-10000, -1000, -10000, -10000, 0, 0, 0], dtype=np.float32)
+        high = np.array([10000, 1000, 10000, 10000, 100, 50, 20], dtype=np.float32)
 
         # Observation: [dx, health, ammo, grenades]
         # low = np.array([-10000, 0, 0, 0], dtype=np.float32)
@@ -128,13 +129,12 @@ class ShooterEnv(gym.Env):
         # Exit distance
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        # Create an observation (7 values)
         obs = [
             p_dx,
             p_dy,
-            p.health,
             exit_dx,
             exit_dy,
+            p.health,
             p.ammo,
             p.grenades
         ]
@@ -166,38 +166,49 @@ class ShooterEnv(gym.Env):
 
 
     def _get_reward(self):
-        # perhaps try to have increased rewards at beginning and use a function to diminish returns on distance (because distance is a large value)
         p = self.game.player
+        reward = 0
 
         if not p.alive:
-            return -100_000
+            return -100
         
-        p_dx = p.rect.centerx - self.start_x
+        player_state = np.array([
+            p.rect.centerx - self.start_x,
+            p.rect.centery - self.start_y,
+            *self._get_exit_offset(p),
+            p.health,
+            p.ammo,
+            p.grenades
+        ], dtype=np.float32)
 
-        reward = 1000 * -p_dx
-        # print(reward, -p_dx)
-        # reward = 0.1 * (p.rect.centerx - self.start_x)
-        # reward += p.health * 0.1
-        # reward += p.ammo * 0.1
-        # reward += p.grenades * 0.1
+        # create distance bins
+        discretized_state = ShooterAgent.discretize_state(player_state)
+        
+        x_bin, y_bin = discretized_state[0], discretized_state[1]
+        exit_dx, exit_dy = discretized_state[2], discretized_state[3]
+        health = discretized_state[4]
+        ammo = discretized_state[5]
+        grenades = discretized_state[6]
 
-        # check rewards for bullet hits on enemies
+        distance_traveled = abs(x_bin - self.start_x) + abs(y_bin - self.start_y)
+        reward += distance_traveled * 0.2
+        reward += health * 0.1
+        reward += ammo * 0.5
+        reward += grenades * 1.0
+
+        # Reward for hitting enemies with ammo or grenades
         for bullet in self.game.groups['bullet']:
             for enemy in self.game.groups['enemy']:
                 if enemy.alive and bullet.rect.colliderect(enemy.rect):
-                    # Bullet hit an enemy, give some reward
-                    reward += 10
+                    reward += 20  # Reward for hitting an enemy
                     if enemy.health <= 0:
-                        reward += 30
-        
+                        reward += 50  # Additional reward for defeating an enemy
 
         if self.game.level_complete:
-            reward += 100_000
-        
-        # print(reward)
+            reward += 100
 
         return reward
-
+    
 
     def _action_to_controller(self, action):
         '''

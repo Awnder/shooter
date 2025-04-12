@@ -10,6 +10,27 @@ import pickle
 import os
 
 class ShooterAgent:
+    # grid size for discretizing the state space
+    BIN_GRID_SIZE = 50
+
+    @staticmethod
+    def discretize_state(obs: np.ndarray) -> tuple[int, int, bool]:
+        """Discretizes the state x/y space into a grid.
+        Because the observation space is continuous, we need to create 'bins' to group the 
+        coordinates together to give the Q-learning algorithm better data.
+        Returns the observation as a tuple because the Q-table needs hashable keys (np.ndarrays are not).
+        Args:
+            obs (np.ndarray): The observation to discretize.
+            grid_size (int): The size of each grid cell.
+        Returns:
+            tuple[int, int, bool]: The discretized state.    
+        """
+        dx, dy = obs[0], obs[1]
+        x_bin = int(np.floor(dx / ShooterAgent.BIN_GRID_SIZE))
+        y_bin = int(np.floor(dy / ShooterAgent.BIN_GRID_SIZE))
+
+        return (x_bin, y_bin) + tuple(obs[2:])
+
     def __init__(
         self,
         env: gym.Env,
@@ -38,47 +59,58 @@ class ShooterAgent:
         self.training_error = []
 
     def get_action(self, obs: tuple[int, int, bool]) -> int:
-        """Returns best action with probability (1 - epsilon).
+        """Uses epsilon-greedy policy to select an action.
+        Returns best action with probability (1 - epsilon).
         Otherwise returns random action with probability epsilon.
+        Args:
+            obs (tuple[int, int, bool]): The current observation.
+        Returns:
+            int: The action to take.
         """
-        obs = tuple(obs)
-        if np.random.rand() < self.epsilon:
+        obs = self.discretize_state(obs)
+        if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
             return int(np.argmax(self.q_table[obs]))
 
     def update(
         self,
-        obs: tuple[int, int, bool],
+        obs: np.ndarray,
         action: int,
         reward: float,
         terminated: bool,
-        next_obs: tuple[int, int, bool]
+        next_obs: np.ndarray,
     ) -> None:
         """Updates the Q-Value of the action
         Args:
-            obs (tuple[int, int, bool]): The current observation.
+            obs (np.ndarray): The current observation.
             action (int): The action taken.
             reward (float): The reward received.
             terminated (bool): Whether the episode has terminated.
             next_obs (tuple[int, int, bool]): The next observation after taking the action.
         """
-        # obs and next_obs are ndarrays, which are unhashable
-        # unhashable data types can't be used as dict keys
-        obs = tuple(obs)
-        next_obs = tuple(next_obs)
+        obs = self.discretize_state(obs)
+        next_obs = self.discretize_state(next_obs)
 
-        temporal_difference_error = reward + self.gamma * np.max(self.q_table[next_obs]) - self.q_table[obs][action]
+        future_q = (not terminated) * np.max(self.q_table[next_obs])
 
-        self.q_table[obs][action] = self.q_table[obs][action] + self.alpha * temporal_difference_error
+        temporal_difference_error = (
+            reward + self.gamma * future_q - self.q_table[obs][action]
+        )
+
+        self.q_table[obs][action] = (
+            self.q_table[obs][action] + self.alpha * temporal_difference_error
+        )
 
         self.training_error.append(temporal_difference_error)
+
+    
 
     def decay_epsilon(self) -> None:
         """Decay the exploration rate (epsilon) after each episode."""
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
 
-    def save_snapshot(self, filename) -> None:
+    def save_snapshot(self, filename: str) -> None:
         """Save a snapshot of the current Q-values which can be used to resume training or evaluate the agent later.
         Args:
             filename (str): The filename to save the snapshot to.
@@ -88,7 +120,7 @@ class ShooterAgent:
         with open(os.path.join('snapshots', f'{filename}.pkl'), 'wb') as f:
             pickle.dump(dict(self.q_table), f)
 
-    def load_snapshot(self, filename) -> None:
+    def load_snapshot(self, filename: str) -> None:
         """Load the agent a snapshot of the Q-values from a file.
         Args:
             filename (str): The filename to load the snapshot from.

@@ -34,6 +34,11 @@ if __name__ == "__main__":
         default=n_episodes, 
         help="Number of episodes to train the agent"
     )
+    parser.add_argument(
+        "--render", 
+        action="store_true", 
+        help="Render the environment for humans"
+    )
         
     args = parser.parse_args()
 
@@ -74,7 +79,11 @@ if __name__ == "__main__":
     
     # train a new agent
     if args.train:
-        env = ShooterEnv(render_mode=None)
+        env = None
+        if args.render:
+            env = ShooterEnv(render_mode='human')
+        else:
+            env = ShooterEnv(render_mode=None)
         env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
         agent = ShooterAgent(
             env=env,
@@ -84,7 +93,7 @@ if __name__ == "__main__":
             final_epsilon=final_epsilon,
         )
         ep_count = 0
-        n_episodes = args.episodes if args.episodes else n_episodes
+        n_episodes = args.episodes if args.episodes and args.episodes > 0 else n_episodes
         for episode in tqdm(range(n_episodes)):
             obs, info = env.reset()
             done = False
@@ -93,6 +102,9 @@ if __name__ == "__main__":
                 action = agent.get_action(obs)
                 next_obs, reward, terminated, truncated, info = env.step(action)
                 
+                if args.render:
+                    env.render()
+                    
                 agent.update(obs, action, reward, terminated, next_obs)
 
                 done = terminated or truncated
