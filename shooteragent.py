@@ -1,3 +1,8 @@
+# modify discretize state such that it cuts game env in x-val bins with no y-val considerations
+# find width of game env to use for this
+# consider smaller bins at start and making them bigger as the game progresses
+# line 205 in game engine to see self.world_width
+
 import numpy as np
 import pygame
 
