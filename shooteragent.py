@@ -68,9 +68,15 @@ class ShooterAgent:
         obs = tuple(obs)
         next_obs = tuple(next_obs)
 
-        temporal_difference_error = reward + self.gamma * np.max(self.q_table[next_obs]) - self.q_table[obs][action]
+        future_q = (not terminated) * np.max(self.q_table[next_obs])
 
-        self.q_table[obs][action] = self.q_table[obs][action] + self.alpha * temporal_difference_error
+        temporal_difference_error = (
+            reward + self.gamma * future_q - self.q_table[obs][action]
+        )
+
+        self.q_table[obs][action] = (
+            self.q_table[obs][action] + self.alpha * temporal_difference_error
+        )
 
         self.training_error.append(temporal_difference_error)
 
