@@ -5,7 +5,7 @@ pygame.mixer.init()
 
 import gymnasium as gym
 from gymenv import ShooterEnv
-from shooteragent import ShooterAgent
+from shooter.qtable_agent import ShooterAgent
 from tqdm import tqdm
 import argparse
 import os
