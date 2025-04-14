@@ -170,28 +170,28 @@ class ShooterEnv(gym.Env):
         p = self.game.player
 
         if not p.alive:
-            return -100_000
+            return -100
         
         p_dx = p.rect.centerx - self.start_x
 
-        reward = 1000 * -p_dx
-        # print(reward, -p_dx)
+        reward = p_dx
+        print(reward, p_dx)
         # reward = 0.1 * (p.rect.centerx - self.start_x)
         # reward += p.health * 0.1
         # reward += p.ammo * 0.1
         # reward += p.grenades * 0.1
 
         # check rewards for bullet hits on enemies
-        for bullet in self.game.groups['bullet']:
-            for enemy in self.game.groups['enemy']:
-                if enemy.alive and bullet.rect.colliderect(enemy.rect):
-                    reward += 20  # Reward for hitting an enemy
-                    if enemy.health <= 0:
-                        reward += 50  # Additional reward for defeating an enemy
+        # for bullet in self.game.groups['bullet']:
+        #     for enemy in self.game.groups['enemy']:
+        #         if enemy.alive and bullet.rect.colliderect(enemy.rect):
+        #             reward += 20  # Reward for hitting an enemy
+        #             if enemy.health <= 0:
+        #                 reward += 50  # Additional reward for defeating an enemy
         
 
         if self.game.level_complete:
-            reward += 100_000
+            reward += 200
         
         # print(reward)
 
