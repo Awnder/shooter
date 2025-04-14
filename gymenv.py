@@ -185,10 +185,9 @@ class ShooterEnv(gym.Env):
         for bullet in self.game.groups['bullet']:
             for enemy in self.game.groups['enemy']:
                 if enemy.alive and bullet.rect.colliderect(enemy.rect):
-                    # Bullet hit an enemy, give some reward
-                    reward += 10
+                    reward += 20  # Reward for hitting an enemy
                     if enemy.health <= 0:
-                        reward += 30
+                        reward += 50  # Additional reward for defeating an enemy
         
 
         if self.game.level_complete:
