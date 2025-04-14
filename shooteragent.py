@@ -11,7 +11,7 @@ import os
 
 class ShooterAgent:
     # grid size for discretizing the state space
-    BIN_GRID_SIZE = 50
+    BIN_GRID_SIZE = 100
 
     @staticmethod
     def discretize_state(obs: np.ndarray) -> tuple[int, int, bool]:
@@ -21,7 +21,7 @@ class ShooterAgent:
         Returns the observation as a tuple because the Q-table needs hashable keys (np.ndarrays are not).
         Args:
             obs (np.ndarray): The observation to discretize.
-            grid_size (int): The size of each grid cell.
+            grid_size (int): The size of each grid cell.about:blank#blocked
         Returns:
             tuple[int, int, bool]: The discretized state.    
         """

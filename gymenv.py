@@ -190,11 +190,12 @@ class ShooterEnv(gym.Env):
         ammo = discretized_state[5]
         grenades = discretized_state[6]
 
-        distance_traveled = abs(x_bin - self.start_x) + abs(y_bin - self.start_y)
-        reward += distance_traveled * 0.2
-        reward += health * 0.1
-        reward += ammo * 0.5
-        reward += grenades * 1.0
+        # distance_traveled = abs(x_bin - self.start_x) + abs(y_bin - self.start_y)
+        distance_traveled = abs(x_bin - self.start_x) # only in x direction
+        reward += distance_traveled * 0.1
+        # reward += health * 0.1
+        # reward += ammo * 0.5
+        # reward += grenades * 1.0
 
         # Reward for hitting enemies with ammo or grenades
         for bullet in self.game.groups['bullet']:
