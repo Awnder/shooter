@@ -32,7 +32,7 @@ class ShooterEnv(gym.Env):
         game engine into the background and defines the action space and the
         observation space.
         """
-
+        # Create gym environment and game engine
         super().__init__()
         self.render_mode = render_mode
         pygame.display.init()
@@ -45,6 +45,7 @@ class ShooterEnv(gym.Env):
             pygame.display.set_mode((1, 1), pygame.HIDDEN)
             self.game = GameEngine(None, False)
 
+        # Create observation and action spaces
         # Observation: [dx, dy, exit_dx, exit_dy, health, ammo, grenades]
         low = np.array([-10000, -1000, -10000, -10000, 0, 0, 0], dtype=np.float32)
         high = np.array([10000, 1000, 10000, 10000, 100, 50, 20], dtype=np.float32)
@@ -55,8 +56,10 @@ class ShooterEnv(gym.Env):
 
         # Discrete action space of possible moves
         self.action_space = Discrete(len(low))
-
         self.observation_space = Box(low, high, dtype=np.float32)
+
+        # Create last bin variable to track player movement for reward
+        self.last_bin = 0
 
     def reset(self, seed=None, options=None):
         """
@@ -69,6 +72,7 @@ class ShooterEnv(gym.Env):
         # Tracks observation and reward values across steps
         self.start_x = self.game.player.rect.centerx
         self.start_y = self.game.player.rect.centery
+        self.last_bin = 0
 
         # Initialize the variables I decided were important for debugging
         debug_info = {
@@ -107,7 +111,6 @@ class ShooterEnv(gym.Env):
         if self.render_mode != "human":
             return
 
-        # Draw the screen
         self.game.draw()
         pygame.display.update()
 
@@ -166,29 +169,29 @@ class ShooterEnv(gym.Env):
             dtype=np.float32,
         )
 
-        # create distance bins
-        discretized_state = ShooterAgent.bin_x_state(player_state)
+        # create x distance bin
+        x_bin = ShooterAgent.bin_x_state(player_state[0])
 
-        x_bin, y_bin = discretized_state[0], discretized_state[1]
-        exit_dx, exit_dy = discretized_state[2], discretized_state[3]
-        health = discretized_state[4]
-        ammo = discretized_state[5]
-        grenades = discretized_state[6]
+        if self.last_bin > x_bin:
+            reward -= 5 # Penalty for moving backwards
+        elif self.last_bin < x_bin:
+            reward += 5
 
-        # distance_traveled = abs(x_bin - self.start_x) + abs(y_bin - self.start_y)
-        distance_traveled = abs(x_bin - self.start_x)  # only in x direction
-        reward += distance_traveled * 0.1
+        print(self.last_bin, x_bin, reward)
+
+        self.last_bin = x_bin
+
         # reward += health * 0.1
         # reward += ammo * 0.5
         # reward += grenades * 1.0
 
         # Reward for hitting enemies with ammo or grenades
-        for bullet in self.game.groups["bullet"]:
-            for enemy in self.game.groups["enemy"]:
-                if enemy.alive and bullet.rect.colliderect(enemy.rect):
-                    reward += 20  # Reward for hitting an enemy
-                    if enemy.health <= 0:
-                        reward += 50  # Additional reward for defeating an enemy
+        # for bullet in self.game.groups["bullet"]:
+        #     for enemy in self.game.groups["enemy"]:
+        #         if enemy.alive and bullet.rect.colliderect(enemy.rect):
+        #             reward += 20  # Reward for hitting an enemy
+        #             if enemy.health <= 0:
+        #                 reward += 50  # Additional reward for defeating an enemy
 
         if self.game.level_complete:
             reward += 100

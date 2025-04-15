@@ -19,7 +19,7 @@ import os
 class ShooterAgent:
 
     @staticmethod
-    def bin_x_state(obs: np.ndarray) -> tuple[int, int, bool]:
+    def bin_x_state(x_state: float) -> float:
         """Discretizes the state x space into a grid.
         Because the observation space is continuous, we need to create 'bins' to group the
         coordinates together to give the Q-learning algorithm better data.
@@ -28,26 +28,23 @@ class ShooterAgent:
             obs (np.ndarray): The observation to discretize.
             grid_size (int): The size of each grid cell
         Returns:
-            tuple[int, int, bool]: The discretized x and other states.
+            x_bin (float): The current x bin the player is in
         """
-        dx = obs[0]
-
+        # on initialization, the world_width is 0, so ignore that state
         if GameEngine.world_width > 0:
-            level_progress = dx / GameEngine.world_width  # Calculate progress through the level (0 to 1)
+            level_progress = x_state / GameEngine.world_width  # Calculate progress through the level (0 to 1)
             min_bin_size = GameEngine.world_width / 100  # Smaller bin size at the beginning
             max_bin_size = GameEngine.world_width / 50   # Larger bin size at the end
             bin_size = min_bin_size + (max_bin_size - min_bin_size) * level_progress
 
             # calculate the current bin the user is in
             # if bin_size is 50, then the bins are [0, 50), [50, 100), etc.
-            x_bin = np.floor((dx / bin_size))
-
-            print(level_progress, bin_size, x_bin)
+            x_bin = np.floor((x_state / bin_size))
 
         else:
             x_bin = 0
 
-        return (x_bin,) + tuple(obs[1:])
+        return x_bin
 
     def __init__(
         self,
@@ -85,7 +82,7 @@ class ShooterAgent:
         Returns:
             int: The action to take.
         """
-        obs = self.bin_x_state(obs)
+        obs = (self.bin_x_state(obs[0]), *obs[1:])
         if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
@@ -107,8 +104,8 @@ class ShooterAgent:
             terminated (bool): Whether the episode has terminated.
             next_obs (tuple[int, int, bool]): The next observation after taking the action.
         """
-        obs = self.bin_x_state(obs)
-        next_obs = self.bin_x_state(next_obs)
+        obs = (self.bin_x_state(obs[0]), *obs[1:])
+        next_obs = (self.bin_x_state(next_obs[0]), *next_obs[1:])
 
         future_q = (not terminated) * np.max(self.q_table[next_obs])
 
