@@ -91,12 +91,8 @@ if __name__ == "__main__":
     
     # train a new agent
     if train:
-        env = None
-        if render:
-            env = ShooterEnv(render_mode='human', game_level=train)
-        else:
-            env = ShooterEnv(render_mode=None, game_level=train)
-        game_level = env.game.level
+        # create environment and agent
+        env = ShooterEnv(render_mode='human', game_level=train) if render else ShooterEnv(render_mode=None, game_level=train)
         env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
         agent = ShooterAgent(
             env=env,
@@ -105,6 +101,8 @@ if __name__ == "__main__":
             epsilon_decay=epsilon_decay,
             final_epsilon=final_epsilon,
         )
+
+        # set episodes and start training
         ep_count = 0
         n_episodes = episodes if episodes and episodes > 0 else n_episodes
         for episode in tqdm(range(n_episodes)):
@@ -126,8 +124,8 @@ if __name__ == "__main__":
             agent.decay_epsilon()
             ep_count += 1
 
+            # Save a snapshot every 100 episodes
             if ep_count % 100 == 0:
-                # Save a snapshot every 10 episodes
                 agent.save_snapshot(f'{ep_count}')
                 print(f"Saved snapshot at episode {ep_count}")
 
