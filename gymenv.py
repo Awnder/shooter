@@ -186,6 +186,9 @@ class ShooterEnv(gym.Env):
 
         self.last_bin = x_bin
 
+        if p.jump:
+            reward -= 0.1
+
         # reward += health * 0.1
         # reward += ammo * 0.5
         # reward += grenades * 1.0
