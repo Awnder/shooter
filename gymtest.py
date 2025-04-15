@@ -105,6 +105,7 @@ if __name__ == "__main__":
         # set episodes and start training
         ep_count = 0
         n_episodes = episodes if episodes and episodes > 0 else n_episodes
+        save_number = n_episodes // 5
         for episode in tqdm(range(n_episodes)):
             obs, info = env.reset()
             done = False
@@ -124,8 +125,8 @@ if __name__ == "__main__":
             agent.decay_epsilon()
             ep_count += 1
 
-            # Save a snapshot every 100 episodes
-            if ep_count % 100 == 0:
+            # Save 5 snapshots
+            if ep_count % save_number == 0:
                 agent.save_snapshot(str(train), f'{ep_count}')
                 print(f"Saved snapshot at episode {ep_count}")
 
