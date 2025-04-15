@@ -34,6 +34,9 @@ class GameEngine():
     bullet_sound_fx = None
     explosion_sound_fx = None
 
+    # world width for shooter agent bin to access
+    world_width = 0
+
     @classmethod
     def load_assets(cls, interactive_mode=True):
         '''
@@ -202,7 +205,7 @@ class GameEngine():
                     self.world_data[idx_y].append(int(tile_data))
 
         # Populate the world by loading the appropriate game tile
-        self.world_width = TILEMAP.TILE_SIZE * len(self.world_data[0])
+        GameEngine.world_width = TILEMAP.TILE_SIZE * len(self.world_data[0])
         for idx_y, row_of_tiles in enumerate(self.world_data):
             for idx_x, tile in enumerate(row_of_tiles):
                 if tile >= 0: # -1 is an empty space
@@ -333,7 +336,7 @@ class GameEngine():
         # If the player is moving too far right or left, scroll the screen
         if ((self.player.direction == Direction.RIGHT 
                 and self.player.rect.right + self.camera_scroll >= SCROLL_RIGHT
-                and self.bg_scroll + SCREEN_WIDTH < self.world_width)
+                and self.bg_scroll + SCREEN_WIDTH < GameEngine.world_width)
             or (self.player.direction == Direction.LEFT 
                 and self.player.rect.left + self.camera_scroll < SCROLL_LEFT
                 and self.bg_scroll > 0)):
@@ -376,7 +379,7 @@ class GameEngine():
 
         # Check if player is going off the edge of the world
         if ((sprite.direction == Direction.RIGHT 
-                and sprite.rect.right >= self.world_width)
+                and sprite.rect.right >= GameEngine.world_width)
             or (sprite.direction == Direction.LEFT
                 and sprite.rect.left <= 0)):
             sprite.dx = 0

@@ -1,4 +1,3 @@
-
 import numpy as np
 import pygame
 
@@ -14,35 +13,30 @@ from controller import GameController
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 # Not required unless we want to provide traditional gym.make capabilities
-register(id='Sidescroller-v0',
-         entry_point='gymenv:ShooterEnv',
-         max_episode_steps=5000)
+register(id="Sidescroller-v0", entry_point="gymenv:ShooterEnv", max_episode_steps=5000)
 
 
 class ShooterEnv(gym.Env):
-    '''
+    """
     Wrapper class that creates a gym interface to the original game engine.
-    '''
+    """
 
     # Hints for registered environments; ignored otherwise
-    metadata = {
-        'render_modes': ['human'],
-        'render_fps': 60
-    }
+    metadata = {"render_modes": ["human"], "render_fps": 60}
 
     def __init__(self, render_mode=None):
-        '''
+        """
         Initializes a new Gymnasium environment for the Shooter Game. Loads the
         game engine into the background and defines the action space and the
         observation space.
-        '''
+        """
 
         super().__init__()
         self.render_mode = render_mode
         pygame.display.init()
-        if self.render_mode == 'human':
+        if self.render_mode == "human":
             pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-            pygame.display.set_caption('Shooter')
+            pygame.display.set_caption("Shooter")
             self.screen = pygame.display.get_surface()
             self.game = GameEngine(self.screen, False)
         else:
@@ -62,11 +56,10 @@ class ShooterEnv(gym.Env):
 
         self.observation_space = Box(low, high, dtype=np.float32)
 
-
     def reset(self, seed=None, options=None):
-        '''
+        """
         Resets the game environment for the beginning of another episode.
-        '''
+        """
         self.step_count = 0
         self.game.reset_world()
         self.game.load_current_level()
@@ -77,20 +70,19 @@ class ShooterEnv(gym.Env):
 
         # Initialize the variables I decided were important for debugging
         debug_info = {
-            'player_health': self.game.player.health,
-            'player_distance': (0, 0),
-            'exit_distance': self._get_exit_offset(self.game.player)
+            "player_health": self.game.player.health,
+            "player_distance": (0, 0),
+            "exit_distance": self._get_exit_offset(self.game.player),
         }
 
         # Return the initial game state
         observation, debug_info = self._get_observation()
         return observation, debug_info
 
-
     def step(self, action):
-        '''
+        """
         Agent performs a single action in the game environemnt.
-        '''
+        """
         controller = self._action_to_controller(action)
         self.game.update(controller)
         self.step_count += 1
@@ -102,22 +94,20 @@ class ShooterEnv(gym.Env):
 
         return observation, reward, terminated, truncated, debug_info
 
-
     def render(self):
-        ''' 
+        """
         Visually renders the game so that viewers can watch the agent play. The
         first time this function is called, it initializes the PyGame display
         and mixer (just like a real game). If the self. Every time that it is called, this
         function draws the game.
-        '''
+        """
         # Do nothing if rendering is disabled
         if self.render_mode != "human":
             return
 
-        # Draw the screen        
+        # Draw the screen
         self.game.draw()
         pygame.display.update()
-
 
     def _get_observation(self):
         p = self.game.player
@@ -129,31 +119,22 @@ class ShooterEnv(gym.Env):
         # Exit distance
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        obs = [
-            p_dx,
-            p_dy,
-            exit_dx,
-            exit_dy,
-            p.health,
-            p.ammo,
-            p.grenades
-        ]
+        obs = [p_dx, p_dy, exit_dx, exit_dy, p.health, p.ammo, p.grenades]
 
         # Create debug information
         debug_info = {
-            'player_health': p.health,
-            'player_distance': (p_dx, p_dy),
-            'exit_distance': (exit_dx, exit_dy),
+            "player_health": p.health,
+            "player_distance": (p_dx, p_dy),
+            "exit_distance": (exit_dx, exit_dy),
         }
 
         return np.array(obs, dtype=np.float32), debug_info
-    
 
     def _get_exit_offset(self, player):
-        min_dist = float('inf')
+        min_dist = float("inf")
         closest_dx, closest_dy = 9999, 9999
 
-        for tile in self.game.groups['exit']:
+        for tile in self.game.groups["exit"]:
             dx = tile.rect.centerx - player.rect.centerx
             dy = tile.rect.centery - player.rect.centery
             dist = abs(dx) + abs(dy)
@@ -164,26 +145,28 @@ class ShooterEnv(gym.Env):
 
         return closest_dx, closest_dy
 
-
     def _get_reward(self):
         p = self.game.player
         reward = 0
 
         if not p.alive:
             return -100
-        
-        player_state = np.array([
-            p.rect.centerx - self.start_x,
-            p.rect.centery - self.start_y,
-            *self._get_exit_offset(p),
-            p.health,
-            p.ammo,
-            p.grenades
-        ], dtype=np.float32)
+
+        player_state = np.array(
+            [
+                p.rect.centerx - self.start_x,
+                p.rect.centery - self.start_y,
+                *self._get_exit_offset(p),
+                p.health,
+                p.ammo,
+                p.grenades,
+            ],
+            dtype=np.float32,
+        )
 
         # create distance bins
-        discretized_state = ShooterAgent.discretize_state(player_state)
-        
+        discretized_state = ShooterAgent.bin_x_state(player_state)
+
         x_bin, y_bin = discretized_state[0], discretized_state[1]
         exit_dx, exit_dy = discretized_state[2], discretized_state[3]
         health = discretized_state[4]
@@ -191,15 +174,15 @@ class ShooterEnv(gym.Env):
         grenades = discretized_state[6]
 
         # distance_traveled = abs(x_bin - self.start_x) + abs(y_bin - self.start_y)
-        distance_traveled = abs(x_bin - self.start_x) # only in x direction
+        distance_traveled = abs(x_bin - self.start_x)  # only in x direction
         reward += distance_traveled * 0.1
         # reward += health * 0.1
         # reward += ammo * 0.5
         # reward += grenades * 1.0
 
         # Reward for hitting enemies with ammo or grenades
-        for bullet in self.game.groups['bullet']:
-            for enemy in self.game.groups['enemy']:
+        for bullet in self.game.groups["bullet"]:
+            for enemy in self.game.groups["enemy"]:
                 if enemy.alive and bullet.rect.colliderect(enemy.rect):
                     reward += 20  # Reward for hitting an enemy
                     if enemy.health <= 0:
@@ -209,18 +192,24 @@ class ShooterEnv(gym.Env):
             reward += 100
 
         return reward
-    
 
     def _action_to_controller(self, action):
-        '''
+        """
         Converts an action (just an integer) to a game controller object.
-        '''
+        """
         ctrl = GameController()
-        if action == 0: ctrl.mleft = True
-        elif action == 1: ctrl.mright = True
-        elif action == 2: ctrl.jump = True
-        elif action == 3: ctrl.jump = ctrl.mleft = True
-        elif action == 4: ctrl.jump = ctrl.mright = True
-        elif action == 5: ctrl.shoot = True
-        elif action == 6: ctrl.throw = True
+        if action == 0:
+            ctrl.mleft = True
+        elif action == 1:
+            ctrl.mright = True
+        elif action == 2:
+            ctrl.jump = True
+        elif action == 3:
+            ctrl.jump = ctrl.mleft = True
+        elif action == 4:
+            ctrl.jump = ctrl.mright = True
+        elif action == 5:
+            ctrl.shoot = True
+        elif action == 6:
+            ctrl.throw = True
         return ctrl
