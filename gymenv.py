@@ -177,7 +177,7 @@ class ShooterEnv(gym.Env):
         elif self.last_bin < x_bin:
             reward += 5
 
-        print(self.last_bin, x_bin, reward)
+        # print(self.last_bin, x_bin, reward)
 
         self.last_bin = x_bin
 
