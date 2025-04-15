@@ -1,3 +1,5 @@
+# add reward to bin movement
+# subtract reward based on larger number of actions
 import numpy as np
 import pygame
 
