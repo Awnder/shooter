@@ -18,39 +18,47 @@ if __name__ == "__main__":
     final_epsilon = 0.1
 
     parser = argparse.ArgumentParser(description="Shooter Agent Training or Loading")
-    parser.add_argument(
+    load_train_group = parser.add_mutually_exclusive_group(required=True)
+    load_train_group.add_argument(
+        "-l",
         "--load", 
         type=str, 
-        help="Path to the pickled agent snapshot to load"
+        help="Path to the pickled agent snapshot to load. Use format 'game_level-episode_number'"
     )
-    parser.add_argument(
+    load_train_group.add_argument(
+        "-t",
         "--train", 
-        action="store_true", 
-        help="Train a new agent from scratch"
+        type=int, 
+        help="Train a new agent from scratch on the specified game level. Use format 'game_level'"
     )
-    parser.add_argument(
+    train_group = parser.add_argument_group("train", "Arguments for training mode")
+    train_group.add_argument(
+        "-e",
         "--episodes", 
         type=int, 
         default=n_episodes, 
         help="Number of episodes to train the agent"
     )
-    parser.add_argument(
+    train_group.add_argument(
+        "-r",
         "--render", 
         action="store_true", 
         help="Render the environment for humans"
     )
-        
-    args = parser.parse_args()
 
-    if args.load and args.train:
-        print("You cannot specify both --load and --train at the same time.")
-        exit()
-    if not args.load and not args.train:
-        print("You must specify either --load or --train.")
+    load = vars(parser.parse_args())["load"]
+    train = vars(parser.parse_args())["train"]
+    render = vars(parser.parse_args())["render"]
+    episodes = vars(parser.parse_args())["episodes"]
+
+    if "-" not in load:
+        print("Invalid load path. Must be in the format 'game_level-episode_number'.")
         exit()
 
     # load agent and replay the episode
-    if args.load:
+    if load:
+        game_level, episode_number = load.split("-")
+
         env = ShooterEnv(render_mode='human')
         env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
         agent = ShooterAgent(
@@ -60,8 +68,8 @@ if __name__ == "__main__":
             epsilon_decay=epsilon_decay,
             final_epsilon=0.1,
         )
-        agent.load_snapshot(os.path.join("snapshots", args.load))
-        print(f"Loaded agent from {args.load}")
+        agent.load_snapshot(os.path.join("snapshots", game_level), episode_number)
+        print(f"Playing episode {episode_number} of level {game_level}")
         for episode in tqdm(range(1)):
             obs, info = env.reset()
             done = False
@@ -78,12 +86,13 @@ if __name__ == "__main__":
                 obs = next_obs
     
     # train a new agent
-    if args.train:
+    if train:
         env = None
-        if args.render:
-            env = ShooterEnv(render_mode='human')
+        if render:
+            env = ShooterEnv(render_mode='human', game_level=train)
         else:
-            env = ShooterEnv(render_mode=None)
+            env = ShooterEnv(render_mode=None, game_level=train)
+        game_level = env.game.level
         env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
         agent = ShooterAgent(
             env=env,
@@ -93,7 +102,7 @@ if __name__ == "__main__":
             final_epsilon=final_epsilon,
         )
         ep_count = 0
-        n_episodes = args.episodes if args.episodes and args.episodes > 0 else n_episodes
+        n_episodes = episodes if episodes and episodes > 0 else n_episodes
         for episode in tqdm(range(n_episodes)):
             obs, info = env.reset()
             done = False
@@ -102,7 +111,7 @@ if __name__ == "__main__":
                 action = agent.get_action(obs)
                 next_obs, reward, terminated, truncated, info = env.step(action)
                 
-                if args.render:
+                if render:
                     env.render()
                     
                 agent.update(obs, action, reward, terminated, next_obs)

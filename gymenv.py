@@ -26,7 +26,7 @@ class ShooterEnv(gym.Env):
     # Hints for registered environments; ignored otherwise
     metadata = {"render_modes": ["human"], "render_fps": 60}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode: bool = None, level: int = 1):
         """
         Initializes a new Gymnasium environment for the Shooter Game. Loads the
         game engine into the background and defines the action space and the
@@ -40,10 +40,10 @@ class ShooterEnv(gym.Env):
             pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
             pygame.display.set_caption("Shooter")
             self.screen = pygame.display.get_surface()
-            self.game = GameEngine(self.screen, False)
+            self.game = GameEngine(self.screen, False, level)
         else:
             pygame.display.set_mode((1, 1), pygame.HIDDEN)
-            self.game = GameEngine(None, False)
+            self.game = GameEngine(None, False, level)
 
         # Create observation and action spaces
         # Observation: [dx, dy, exit_dx, exit_dy, health, ammo, grenades]
