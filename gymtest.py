@@ -56,9 +56,9 @@ if __name__ == "__main__":
         agent = ShooterAgent(
             env=env,
             learning_rate=learning_rate,
-            initial_epsilon=start_epsilon,
+            initial_epsilon=0.1,
             epsilon_decay=epsilon_decay,
-            final_epsilon=final_epsilon,
+            final_epsilon=0.1,
         )
         agent.load_snapshot(os.path.join("snapshots", args.load))
         print(f"Loaded agent from {args.load}")
@@ -113,7 +113,7 @@ if __name__ == "__main__":
             agent.decay_epsilon()
             ep_count += 1
 
-            if ep_count % 10 == 0:
+            if ep_count % 100 == 0:
                 # Save a snapshot every 10 episodes
                 agent.save_snapshot(f'{ep_count}')
                 print(f"Saved snapshot at episode {ep_count}")
