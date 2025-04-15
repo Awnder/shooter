@@ -59,17 +59,21 @@ if __name__ == "__main__":
     if load:
         game_level, episode_number = load.split("-")
 
-        env = ShooterEnv(render_mode='human')
+        # create environment and agent
+        env = ShooterEnv(render_mode='human', level=game_level)
         env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
         agent = ShooterAgent(
             env=env,
             learning_rate=learning_rate,
-            initial_epsilon=0.1,
+            initial_epsilon=0.1, # very low epsilon value sine only want exploitation for loaded q-table
             epsilon_decay=epsilon_decay,
             final_epsilon=0.1,
         )
+
         agent.load_snapshot(os.path.join("snapshots", game_level), episode_number)
         print(f"Playing episode {episode_number} of level {game_level}")
+
+        # run agent in level
         for episode in tqdm(range(1)):
             obs, info = env.reset()
             done = False
