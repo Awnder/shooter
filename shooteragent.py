@@ -123,26 +123,26 @@ class ShooterAgent:
         """Decay the exploration rate (epsilon) after each episode."""
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
 
-    def save_snapshot(self, game_level: str, filename: str) -> None:
+    def save_snapshot(self, level: str, filename: str) -> None:
         """Save a snapshot of the current Q-values which can be used to resume training or evaluate the agent later.
         Args:
-            game_level (str): The game level folder name to save the snapshot to.
+            level (str): The game level folder name to save the snapshot to.
             filename (str): The filename to save the snapshot to.
         """
-        snapshots_dir = os.path.join("snapshots", f"level{game_level}")
+        snapshots_dir = os.path.join("snapshots", f"level{level}")
         if not os.path.exists(snapshots_dir):
             os.makedirs(snapshots_dir)
         
         with open(os.path.join(snapshots_dir, f"{filename}.pkl"), "wb") as f:
             pickle.dump(dict(self.q_table), f)
 
-    def load_snapshot(self, game_level: str, filename: str) -> None:
+    def load_snapshot(self, level: str, filename: str) -> None:
         """Load the agent a snapshot of the Q-values from a file.
         Args:
-            game_level (str): The game level folder name to load the snapshot from.
+            level (str): The game level folder name to load the snapshot from.
             filename (str): The filename to load the snapshot from.
         """
-        with open(os.path.join(game_level, f"{filename}.pkl"), "rb") as f:
+        with open(os.path.join(f"{level}", f"{filename}.pkl"), "rb") as f:
             self.q_table = defaultdict(
                 lambda: np.zeros(self.env.action_space.n), pickle.load(f)
             )
