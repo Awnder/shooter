@@ -60,6 +60,7 @@ class ShooterEnv(gym.Env):
 
         # Create last bin variable to track player movement for reward
         self.last_bin = 0
+        self.actions_in_bin = 0
 
     def reset(self, seed=None, options=None):
         """
@@ -176,6 +177,10 @@ class ShooterEnv(gym.Env):
             reward -= 5 # Penalty for moving backwards
         elif self.last_bin < x_bin:
             reward += 5
+
+        # Penalty for taking too many actions in the same bin
+        if self.last_bin == x_bin:
+            reward -= -0.1
 
         # print(self.last_bin, x_bin, reward)
 
