@@ -65,9 +65,9 @@ if __name__ == "__main__":
         agent = ShooterAgent(
             env=env,
             learning_rate=learning_rate,
-            initial_epsilon=0.1, # very low epsilon value sine only want exploitation for loaded q-table
+            initial_epsilon=0, # only want exploitation for loaded q-table
             epsilon_decay=epsilon_decay,
-            final_epsilon=0.1,
+            final_epsilon=0,
         )
 
         agent.load_snapshot(os.path.join("snapshots", f"level{level}"), episode_number)

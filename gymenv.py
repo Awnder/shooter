@@ -50,9 +50,13 @@ class ShooterEnv(gym.Env):
         # low = np.array([-10000, -1000, -10000, -10000, 0, 0, 0], dtype=np.float32)
         # high = np.array([10000, 1000, 10000, 10000, 100, 50, 20], dtype=np.float32)
 
-        # Observation: [dx, dy, exit_dx, exit_dy, health]
-        low = np.array([-10000, -1000, -10000, -10000, 0], dtype=np.float32)
-        high = np.array([10000, 1000, 10000, 10000, 100], dtype=np.float32)
+        # Observation: [dx, dy, exit_dx, exit_dy]
+        # low = np.array([-10000, -1000, -10000, -10000], dtype=np.float32)
+        # high = np.array([10000, 1000, 10000, 10000], dtype=np.float32)
+
+        # Observation: [dx, dy, in_air]
+        low = np.array([-10000, -1000, 0], dtype=np.float32)
+        high = np.array([10000, 1000, 1], dtype=np.float32)
 
         # Discrete action space of possible moves
         self.action_space = Discrete(len(low))
@@ -126,7 +130,8 @@ class ShooterEnv(gym.Env):
         # Exit distance
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        obs = [p_dx, p_dy, exit_dx, exit_dy, p.health, p.ammo, p.grenades]
+        # obs = [p_dx, p_dy, exit_dx, exit_dy, p.health, p.ammo, p.grenades]
+        obs = [p_dx, p_dy, p.in_air]
 
         # Create debug information
         debug_info = {
@@ -159,27 +164,18 @@ class ShooterEnv(gym.Env):
         if not p.alive:
             return -100
 
-        player_state = np.array(
-            [
-                p.rect.centerx - self.start_x,
-                p.rect.centery - self.start_y,
-                *self._get_exit_offset(p),
-                p.health,
-                p.ammo,
-                p.grenades,
-            ],
-            dtype=np.float32,
-        )
-
         # create x distance bin
-        x_bin = ShooterAgent.bin_x_state(player_state[0])
+        x_bin = ShooterAgent.bin_x_state(p.rect.centerx - self.start_x)
 
         # penalty for moving backwards
         if x_bin in self.seen_bins and x_bin != self.seen_bins[-1]:
             reward -= 5
         elif x_bin not in self.seen_bins:
-            reward += 10
+            reward += 8
             self.seen_bins.append(x_bin)
+
+        if p.in_air:
+            reward -= 0.5
 
         # reward += health * 0.1
         # reward += ammo * 0.5
