@@ -33,8 +33,8 @@ class ShooterAgent:
         # on initialization, the world_width is 0, so ignore that state
         if GameEngine.world_width > 0:
             level_progress = x_state / GameEngine.world_width  # Calculate progress through the level (0 to 1)
-            min_bin_size = GameEngine.world_width / 100  # Smaller bin size at the beginning
-            max_bin_size = GameEngine.world_width / 50  # Larger bin size at the end
+            min_bin_size = GameEngine.world_width / 200  # Smaller bin size at the beginning
+            max_bin_size = GameEngine.world_width / 100  # Larger bin size at the end
             bin_size = min_bin_size + (max_bin_size - min_bin_size) * level_progress
 
             # calculate the current bin the user is in

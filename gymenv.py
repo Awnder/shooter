@@ -47,19 +47,19 @@ class ShooterEnv(gym.Env):
 
         # Create observation and action spaces
         # Observation: [dx, dy, exit_dx, exit_dy, health, ammo, grenades]
-        # low = np.array([-10000, -1000, -10000, -10000, 0, 0, 0], dtype=np.float32)
-        # high = np.array([10000, 1000, 10000, 10000, 100, 50, 20], dtype=np.float32)
+        low = np.array([-10000, -1000, -10000, -10000, 0, 0, 0], dtype=np.float32)
+        high = np.array([10000, 1000, 10000, 10000, 100, 50, 20], dtype=np.float32)
 
         # Observation: [dx, dy, exit_dx, exit_dy]
         # low = np.array([-10000, -1000, -10000, -10000], dtype=np.float32)
         # high = np.array([10000, 1000, 10000, 10000], dtype=np.float32)
 
-        # Observation: [dx, dy, in_air]
-        low = np.array([-10000, -1000, 0], dtype=np.float32)
-        high = np.array([10000, 1000, 1], dtype=np.float32)
+        # Observation: [dx, dy, in_air, health]
+        # low = np.array([-10000, -1000, 0, 0], dtype=np.float32)
+        # high = np.array([10000, 1000, 1, 100], dtype=np.float32)
 
         # Discrete action space of possible moves
-        self.action_space = Discrete(len(low))
+        self.action_space = Discrete(8) # see controller
         self.observation_space = Box(low, high, dtype=np.float32)
 
         # Create last bin variable to track player movement for reward
@@ -100,7 +100,7 @@ class ShooterEnv(gym.Env):
         self.step_count += 1
 
         observation, debug_info = self._get_observation()
-        reward = self._get_reward()
+        reward = self._get_reward(action)
         terminated = not self.game.player.alive or self.game.level_complete
         truncated = self.step_count >= 1000
 
@@ -130,8 +130,8 @@ class ShooterEnv(gym.Env):
         # Exit distance
         exit_dx, exit_dy = self._get_exit_offset(p)
 
-        # obs = [p_dx, p_dy, exit_dx, exit_dy, p.health, p.ammo, p.grenades]
-        obs = [p_dx, p_dy, p.in_air]
+        obs = [p_dx, p_dy, exit_dx, exit_dy, p.health, p.ammo, p.grenades]
+        # obs = [p_dx, p_dy, p.in_air, p.health, p.ammo, p.grenades]
 
         # Create debug information
         debug_info = {
@@ -157,7 +157,7 @@ class ShooterEnv(gym.Env):
 
         return closest_dx, closest_dy
 
-    def _get_reward(self):
+    def _get_reward(self, action):
         p = self.game.player
         reward = 0
 
@@ -166,28 +166,31 @@ class ShooterEnv(gym.Env):
 
         # create x distance bin
         x_bin = ShooterAgent.bin_x_state(p.rect.centerx - self.start_x)
-
-        # penalty for moving backwards
-        if x_bin in self.seen_bins and x_bin != self.seen_bins[-1]:
+        if x_bin in self.seen_bins and x_bin != self.seen_bins[-1]: # penalty for moving backward
             reward -= 5
-        elif x_bin not in self.seen_bins:
+        elif x_bin not in self.seen_bins: # reward for moving to new bin
             reward += 8
             self.seen_bins.append(x_bin)
 
-        if p.in_air:
+        if action in (2, 3, 4): # jump
+            reward -= 2
+
+        if action == 7: # idle
             reward -= 0.5
 
-        # reward += health * 0.1
-        # reward += ammo * 0.5
-        # reward += grenades * 1.0
+        reward -= (100 - p.health) * 0.1  # Penalty for losing health
+        # reward += p.ammo * 0.2
+        # reward += p.grenades * 0.3
+
+        # print(reward)
 
         # Reward for hitting enemies with ammo or grenades
         # for bullet in self.game.groups["bullet"]:
         #     for enemy in self.game.groups["enemy"]:
         #         if enemy.alive and bullet.rect.colliderect(enemy.rect):
-        #             reward += 20  # Reward for hitting an enemy
+        #             reward += 7  # Reward for hitting an enemy
         #             if enemy.health <= 0:
-        #                 reward += 50  # Additional reward for defeating an enemy
+        #                 reward += 10  # Additional reward for defeating an enemy
 
         if self.game.level_complete:
             reward += 100
@@ -213,4 +216,6 @@ class ShooterEnv(gym.Env):
             ctrl.shoot = True
         elif action == 6:
             ctrl.throw = True
+        elif action == 7: # idle
+            pass
         return ctrl

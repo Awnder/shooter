@@ -13,7 +13,7 @@ if __name__ == "__main__":
     epsilon_decay = start_epsilon / (1 / 2)  # reduce the exploration over time
     final_epsilon = 0.1
 
-    env = ShooterEnv(render_mode='human', level=3)
+    env = ShooterEnv(render_mode='human', level=4)
     env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=1)
     agent = ShooterAgent(
         env=env,
